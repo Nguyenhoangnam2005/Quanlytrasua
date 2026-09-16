@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Tiệm Trà Sữa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: #f4f6f9; overflow: hidden; }
+
+        .sidebar { width: 250px; background: #1e2b37; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar .brand { padding: 20px; font-size: 18px; font-weight: bold; background: #111a22; text-align: center; color: #e2b049; }
+        .sidebar .menu { list-style: none; padding-top: 10px; flex: 1; }
+        .sidebar .menu li a { display: block; padding: 15px 20px; color: #b8c7ce; text-decoration: none; font-size: 15px; transition: 0.3s; cursor: pointer; }
+        .sidebar .menu li.active a, .sidebar .menu li a:hover { background: #2c3e50; color: #e2b049; border-left: 4px solid #e2b049; }
+        .sidebar .menu li a i { margin-right: 10px; width: 20px; text-align: center; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 10; }
+        .btn-logout { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.3s; }
+        .btn-logout:hover { background: #c0392b; }
+
+        .tab-content { display: none; flex: 1; overflow: hidden; padding: 20px; }
+        .tab-content.active { display: flex; }
+
+        .pos-container { display: flex; gap: 20px; width: 100%; height: 100%; }
+        .menu-section { flex: 2; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .category-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .cat-btn { background: #fff; border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #555; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        .cat-btn:hover, .cat-btn.active { background: #e2b049; color: #fff; border-color: #e2b049; }
+
+        .products-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; align-content: start; overflow-y: auto; padding-right: 5px; }
+        .product-card { background: #fff; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .product-card:hover { transform: translateY(-3px); border-color: #e2b049; box-shadow: 0 5px 15px rgba(226, 176, 73, 0.2); }
+        .product-card i { font-size: 32px; color: #e2b049; margin-bottom: 8px; }
+        .product-card .code { font-size: 11px; color: #888; font-weight: bold; margin-bottom: 4px; }
+        .product-card h4 { font-size: 13px; margin-bottom: 6px; color: #333; height: 36px; display: flex; align-items: center; justify-content: center; }
+        .product-card p { font-size: 14px; color: #e74c3c; font-weight: bold; }
+
+        .bill-container { width: 340px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; flex-shrink: 0; }
+        .bill-container h3 { font-size: 16px; color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .bill-list { flex: 1; list-style: none; margin: 10px 0; overflow-y: auto; border-top: 1px dashed #eee; border-bottom: 1px dashed #eee; padding: 10px 0; }
+        .bill-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; }
+        .bill-list li .item-name { flex: 1; font-weight: 500; }
+        .bill-list li .item-price { font-weight: bold; color: #333; margin-left: 10px; }
+        .bill-list li .btn-remove { color: #e74c3c; margin-left: 8px; cursor: pointer; font-size: 14px; }
+        .bill-total { font-size: 18px; font-weight: bold; color: #e74c3c; display: flex; justify-content: space-between; margin: 15px 0; }
+        .btn-pay { background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-pay:hover { background: #219150; }
+
+        .admin-panel { width: 100%; background: #fff; padding: 20px; border-radius: 10px; overflow-y: auto; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 13px; font-weight: bold; color: #555; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .btn-add { background: #e2b049; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; height: fit-content; align-self: flex-end; }
+        .btn-add:hover { background: #c99833; }
+        
+        .table-menu { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table-menu th, .table-menu td { border: 1px solid #eee; padding: 10px; text-align: left; font-size: 14px; }
+        .table-menu th { background: #f8f9fa; color: #333; }
+
+        .reports-grid { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; height: fit-content; }
+        .stat-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
+        .stat-card h3 { font-size: 14px; color: #777; margin-bottom: 10px; }
+        .stat-card p { font-size: 24px; font-weight: bold; color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand"><i class="fa-solid fa-mug-hot"></i> TRÀ SỮA POS</div>
+        <ul class="menu">
+            <li class="nav-item active" onclick="switchMainTab('pos', this)">
+                <a><i class="fa-solid fa-cash-register"></i> Bán Hàng (POS)</a>
+            </li>
+            <li class="nav-item" onclick="switchMainTab('menu-mg', this)">
+                <a><i class="fa-solid fa-utensils"></i> Quản Lý Menu</a>
+            </li>
+            <li class="nav-item" onclick="switchMainTab('report', this)">
+                <a><i class="fa-solid fa-chart-line"></i> Báo Cáo Doanh Thu</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h2 id="page-title">Hệ Thống Bán Hàng (POS)</h2>
+            <div>
+                <span>Xin chào, <strong id="user-display">Quản Trị Viên (Admin)</strong>! </span>
+                <a href="Trangchu.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+            </div>
+        </header>
+
+        <!-- TAB 1: BÁN HÀNG POS -->
+        <div id="tab-pos" class="tab-content active">
+            <div class="pos-container">
+                <div class="menu-section">
+                    <div class="category-bar">
+                        <button class="cat-btn active" onclick="filterCategory('all', this)">Tất cả</button>
+                        <button class="cat-btn" onclick="filterCategory('ts', this)">🧋 Trà sữa</button>
+                        <button class="cat-btn" onclick="filterCategory('tc', this)">🍑 Trà trái cây</button>
+                        <button class="cat-btn" onclick="filterCategory('tn', this)">🍵 Trà nguyên vị</button>
+                        <button class="cat-btn" onclick="filterCategory('dx', this)">🍓 Đá xay</button>
+                        <button class="cat-btn" onclick="filterCategory('cf', this)">☕ Cà phê</button>
+                        <button class="cat-btn" onclick="filterCategory('sd', this)">🥤 Soda</button>
+                        <button class="cat-btn" onclick="filterCategory('st', this)">🥑 Sinh tố</button>
+                        <button class="cat-btn" onclick="filterCategory('ng', this)">🥤 Nước giải khát</button>
+                    </div>
+
+                    <div class="products-grid" id="products-grid"></div>
+                </div>
+
+                <div class="bill-container">
+                    <h3><i class="fa-solid fa-receipt"></i> Hóa Đơn Tạm Tính</h3>
+                    <ul class="bill-list" id="bill-items"></ul>
+                    <div class="bill-total">
+                        <span>Tổng tiền:</span>
+                        <span id="total-val">0đ</span>
+                    </div>
+                    <button class="btn-pay" onclick="pay()">Thanh Toán & Xem Hóa Đơn</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: QUẢN LÝ MENU -->
+        <div id="tab-menu-mg" class="tab-content">
+            <div class="admin-panel">
+                <h3>Thêm Món Mới Vào Menu</h3>
+                <br>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mã món:</label>
+                        <input type="text" id="new-code" placeholder="Ví dụ: TS11">
+                    </div>
+                    <div class="form-group">
+                        <label>Tên món:</label>
+                        <input type="text" id="new-name" placeholder="Ví dụ: Trà sữa Socola">
+                    </div>
+                    <div class="form-group">
+                        <label>Giá bán (VNĐ):</label>
+                        <input type="number" id="new-price" placeholder="30000">
+                    </div>
+                    <div class="form-group">
+                        <label>Danh mục:</label>
+                        <select id="new-cat">
+                            <option value="ts">Trà sữa</option>
+                            <option value="tc">Trà trái cây</option>
+                            <option value="tn">Trà nguyên vị</option>
+                            <option value="dx">Đá xay</option>
+                            <option value="cf">Cà phê</option>
+                            <option value="sd">Soda</option>
+                            <option value="st">Sinh tố</option>
+                            <option value="ng">Nước giải khát</option>
+                        </select>
+                    </div>
+                    <button class="btn-add" onclick="addNewProduct()"><i class="fa-solid fa-plus"></i> Thêm Món</button>
+                </div>
+
+                <br><hr><br>
+                <h3>Danh Sách Món Hiện Có</h3>
+                <table class="table-menu">
+                    <thead>
+                        <tr>
+                            <th>Mã Món</th>
+                            <th>Tên Món</th>
+                            <th>Giá Bán</th>
+                            <th>Danh Mục</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body-menu"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: BÁO CÁO DOANH THU -->
+        <div id="tab-report" class="tab-content">
+            <div style="width: 100%;">
+                <div class="reports-grid">
+                    <div class="stat-card">
+                        <h3>Tổng Doanh Thu Hôm Nay</h3>
+                        <p style="color: #27ae60;" id="report-today">0đ</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Tổng Số Hóa Đơn</h3>
+                        <p id="report-count">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Sản Phẩm Đã Bán</h3>
+                        <p style="color: #e2b049;" id="report-items">0 món</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let productsData = [
+            // Trà sữa
+            { code: "TS01", name: "Trà sữa truyền thống", price: 25000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS02", name: "Trà sữa trân châu", price: 28000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS03", name: "Trà sữa matcha", price: 30000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS04", name: "Trà sữa chocolate", price: 30000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS05", name: "Trà sữa khoai môn", price: 30000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS06", name: "Trà sữa caramel", price: 30000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS07", name: "Trà sữa dâu", price: 30000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS08", name: "Trà sữa ô long", price: 28000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS09", name: "Trà sữa Thái xanh", price: 28000, cat: "ts", icon: "fa-whiskey-glass" },
+            { code: "TS10", name: "Trà sữa đường đen", price: 32000, cat: "ts", icon: "fa-whiskey-glass" },
+
+            // Trà trái cây
+            { code: "TC01", name: "Trà đào", price: 25000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC02", name: "Trà đào cam sả", price: 30000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC03", name: "Trà vải", price: 27000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC04", name: "Trà dâu", price: 27000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC05", name: "Trà xoài", price: 27000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC06", name: "Trà chanh dây", price: 25000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC07", name: "Trà tắc", price: 22000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC08", name: "Trà kiwi", price: 30000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC09", name: "Trà dưa hấu", price: 27000, cat: "tc", icon: "fa-wine-glass-empty" },
+            { code: "TC10", name: "Trà nhiệt đới", price: 32000, cat: "tc", icon: "fa-wine-glass-empty" },
+
+            // Trà nguyên vị
+            { code: "TN01", name: "Trà ô long", price: 20000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN02", name: "Trà xanh", price: 18000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN03", name: "Trà đen", price: 18000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN04", name: "Trà nhài", price: 20000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN05", name: "Trà sen", price: 22000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN06", name: "Trà mật ong", price: 22000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN07", name: "Trà chanh", price: 20000, cat: "tn", icon: "fa-glass-water" },
+            { code: "TN08", name: "Trà tắc mật ong", price: 22000, cat: "tn", icon: "fa-glass-water" },
+
+            // Đá xay
+            { code: "DX01", name: "Matcha đá xay", price: 35000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX02", name: "Chocolate đá xay", price: 35000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX03", name: "Cookies đá xay", price: 38000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX04", name: "Dâu đá xay", price: 35000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX05", name: "Xoài đá xay", price: 35000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX06", name: "Việt quất đá xay", price: 38000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX07", name: "Caramel đá xay", price: 38000, cat: "dx", icon: "fa-ice-cream" },
+            { code: "DX08", name: "Khoai môn đá xay", price: 38000, cat: "dx", icon: "fa-ice-cream" },
+
+            // Cà phê
+            { code: "CF01", name: "Cà phê đen", price: 20000, cat: "cf", icon: "fa-mug-hot" },
+            { code: "CF02", name: "Cà phê sữa", price: 23000, cat: "cf", icon: "fa-mug-hot" },
+            { code: "CF03", name: "Bạc xỉu", price: 25000, cat: "cf", icon: "fa-mug-hot" },
+            { code: "CF04", name: "Latte", price: 30000, cat: "cf", icon: "fa-mug-hot" },
+            { code: "CF05", name: "Cappuccino", price: 30000, cat: "cf", icon: "fa-mug-hot" },
+            { code: "CF06", name: "Mocha", price: 32000, cat: "cf", icon: "fa-mug-hot" },
+            { code: "CF07", name: "Cà phê caramel", price: 30000, cat: "cf", icon: "fa-mug-hot" },
+
+            // Soda
+            { code: "SD01", name: "Soda chanh", price: 25000, cat: "sd", icon: "fa-bottle-water" },
+            { code: "SD02", name: "Soda dâu", price: 27000, cat: "sd", icon: "fa-bottle-water" },
+            { code: "SD03", name: "Soda việt quất", price: 27000, cat: "sd", icon: "fa-bottle-water" },
+            { code: "SD04", name: "Soda đào", price: 27000, cat: "sd", icon: "fa-bottle-water" },
+            { code: "SD05", name: "Soda vải", price: 27000, cat: "sd", icon: "fa-bottle-water" },
+            { code: "SD06", name: "Soda chanh dây", price: 27000, cat: "sd", icon: "fa-bottle-water" },
+
+            // Sinh tố
+            { code: "ST01", name: "Sinh tố bơ", price: 35000, cat: "st", icon: "fa-blender" },
+            { code: "ST02", name: "Sinh tố dâu", price: 32000, cat: "st", icon: "fa-blender" },
+            { code: "ST03", name: "Sinh tố xoài", price: 32000, cat: "st", icon: "fa-blender" },
+            { code: "ST04", name: "Sinh tố mãng cầu", price: 35000, cat: "st", icon: "fa-blender" },
+            { code: "ST05", name: "Sinh tố việt quất", price: 35000, cat: "st", icon: "fa-blender" },
+            { code: "ST06", name: "Sinh tố chuối", price: 30000, cat: "st", icon: "fa-blender" },
+            { code: "ST07", name: "Sinh tố chanh dây", price: 30000, cat: "st", icon: "fa-blender" },
+
+            // Nước giải khát
+            { code: "NG01", name: "Coca-Cola", price: 15000, cat: "ng", icon: "fa-prescription-bottle" },
+            { code: "NG02", name: "Pepsi", price: 15000, cat: "ng", icon: "fa-prescription-bottle" },
+            { code: "NG03", name: "7Up", price: 15000, cat: "ng", icon: "fa-prescription-bottle" },
+            { code: "NG04", name: "Nước cam", price: 20000, cat: "ng", icon: "fa-prescription-bottle" },
+            { code: "NG05", name: "Nước chanh", price: 18000, cat: "ng", icon: "fa-prescription-bottle" },
+            { code: "NG06", name: "Nước suối", price: 10000, cat: "ng", icon: "fa-prescription-bottle" }
+        ];
+
+        let currentBill = [];
+        let totalVal = 0;
+        let totalRevenue = 0;
+        let totalOrders = 0;
+        let totalItemsSold = 0;
+
+        function switchMainTab(tabName, element) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+
+            if (tabName === 'pos') {
+                document.getElementById('tab-pos').classList.add('active');
+                document.getElementById('page-title').textContent = "Hệ Thống Bán Hàng (POS)";
+            } else if (tabName === 'menu-mg') {
+                document.getElementById('tab-menu-mg').classList.add('active');
+                document.getElementById('page-title').textContent = "Quản Lý Danh Mục Menu";
+                renderAdminTable();
+            } else if (tabName === 'report') {
+                document.getElementById('tab-report').classList.add('active');
+                document.getElementById('page-title').textContent = "Báo Cáo Doanh Thu";
+            }
+        }
+
+        function renderProducts(category = 'all') {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '';
+            const filtered = category === 'all' ? productsData : productsData.filter(item => item.cat === category);
+
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.onclick = () => addToBill(p.name, p.price);
+                card.innerHTML = `
+                    <i class="fa-solid ${p.icon || 'fa-mug-hot'}"></i>
+                    <div class="code">${p.code}</div>
+                    <h4>${p.name}</h4>
+                    <p>${p.price.toLocaleString()}đ</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(cat, btn) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderProducts(cat);
+        }
+
+        function addToBill(name, price) {
+            currentBill.push({ name, price });
+            totalVal += price;
+            updateBillUI();
+        }
+
+        function removeFromBill(index) {
+            totalVal -= currentBill[index].price;
+            currentBill.splice(index, 1);
+            updateBillUI();
+        }
+
+        function updateBillUI() {
+            const list = document.getElementById('bill-items');
+            list.innerHTML = '';
+            currentBill.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-price">${item.price.toLocaleString()}đ</span>
+                    <i class="fa-solid fa-trash btn-remove" onclick="removeFromBill(${index})"></i>
+                `;
+                list.appendChild(li);
+            });
+            document.getElementById('total-val').textContent = totalVal.toLocaleString() + 'đ';
+        }
+
+        function pay() {
+            if (currentBill.length === 0) {
+                alert('Chưa có món nào trong hóa đơn!');
+                return;
+            }
+
+            totalRevenue += totalVal;
+            totalOrders += 1;
+            totalItemsSold += currentBill.length;
+
+            document.getElementById('report-today').textContent = totalRevenue.toLocaleString() + 'đ';
+            document.getElementById('report-count').textContent = totalOrders;
+            document.getElementById('report-items').textContent = totalItemsSold + ' món';
+
+            let itemsHTML = currentBill.map(i => `
+                <tr>
+                    <td style="padding: 6px 0;">${i.name}</td>
+                    <td style="text-align: right; padding: 6px 0;">${i.price.toLocaleString()}đ</td>
+                </tr>
+            `).join('');
+
+            let printWindow = window.open('', '', 'width=450,height=600');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Hóa Đơn Thanh Toán</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; font-size: 14px; }
+                        h2, p { text-align: center; margin: 5px 0; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        .line { border-top: 1px dashed #000; margin: 10px 0; }
+                        .total { font-weight: bold; font-size: 16px; text-align: right; margin-top: 10px; }
+                        .btn-group { text-align: center; margin-top: 20px; }
+                        .btn-print { background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
+                        @media print { .btn-group { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <h2>TIỆM TRÀ SỮA POS</h2>
+                    <p>ĐC: Hệ Thống Quản Lý Trà Sữa</p>
+                    <p>Ngày: ${new Date().toLocaleString('vi-VN')}</p>
+                    <div class="line"></div>
+                    <table><tbody>${itemsHTML}</tbody></table>
+                    <div class="line"></div>
+                    <p class="total">Tổng tiền: ${totalVal.toLocaleString()}đ</p>
+                    <div class="line"></div>
+                    <p>Cảm ơn quý khách & Hẹn gặp lại!</p>
+                    <div class="btn-group">
+                        <button class="btn-print" onclick="window.print()">🖨️ In Hóa Đơn</button>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+
+            currentBill = [];
+            totalVal = 0;
+            updateBillUI();
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('table-body-menu');
+            tbody.innerHTML = '';
+            productsData.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${p.code}</strong></td>
+                    <td>${p.name}</td>
+                    <td>${p.price.toLocaleString()}đ</td>
+                    <td>${p.cat.toUpperCase()}</td>
+                    <td><button style="color:red; cursor:pointer; border:none; background:none;" onclick="deleteProduct(${index})"><i class="fa-solid fa-trash"></i> Xóa</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addNewProduct() {
+            const code = document.getElementById('new-code').value.trim();
+            const name = document.getElementById('new-name').value.trim();
+            const price = Number(document.getElementById('new-price').value);
+            const cat = document.getElementById('new-cat').value;
+
+            if (!code || !name || !price) {
+                alert('Vui lòng nhập đầy đủ thông tin món!');
+                return;
+            }
+
+            productsData.push({ code, name, price, cat, icon: "fa-mug-hot" });
+            alert('Thêm món thành công!');
+            
+            document.getElementById('new-code').value = '';
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-price').value = '';
+
+            renderAdminTable();
+            renderProducts();
+        }
+
+        function deleteProduct(index) {
+            if (confirm('Bạn có chắc muốn xóa món này?')) {
+                productsData.splice(index, 1);
+                renderAdminTable();
+                renderProducts();
+            }
+        }
+
+        const loggedUser = localStorage.getItem('currentUser');
+        if (loggedUser) {
+            document.getElementById('user-display').textContent = loggedUser;
+        }
+
+        renderProducts('all');
+        renderAdminTable();
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Khoản - Hệ Thống Quản Lý Trà Sữa</title>
+    <link rel="stylesheet" href="trangchu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            
+            <!-- Nút chọn Đăng Nhập / Đăng Ký -->
+            <div class="tab-header">
+                <button type="button" id="tab-login" class="tab-btn active" onclick="switchTab('login')">Đăng Nhập</button>
+                <button type="button" id="tab-register" class="tab-btn" onclick="switchTab('register')">Đăng Ký</button>
+            </div>
+
+            <div class="logo">
+                <i class="fa-solid fa-mug-hot"></i>
+                <h2>HỆ THỐNG QUẢN LÝ TRÀ SỮA</h2>
+                <p id="sub-title">Chào mừng bạn! Vui lòng đăng nhập tài khoản.</p>
+            </div>
+
+            <!-- FORM 1: ĐĂNG NHẬP -->
+            <form id="form-login" class="auth-form active">
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="login-email" placeholder="Email hoặc Tên đăng nhập" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="login-pass" placeholder="Mật khẩu" required>
+                </div>
+
+                <div class="options">
+                    <label><input type="checkbox"> Ghi nhớ đăng nhập</label>
+                    <a href="#">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit" class="btn-submit">Đăng Nhập</button>
+            </form>
+
+            <!-- FORM 2: ĐĂNG KÝ -->
+            <form id="form-register" class="auth-form">
+                <div class="input-group">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="reg-name" placeholder="Họ và tên" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="reg-email" placeholder="Email đăng ký" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="reg-pass1" placeholder="Mật khẩu chính" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <input type="password" id="reg-pass2" placeholder="Xác nhận lại mật khẩu" required>
+                </div>
+
+                <button type="submit" class="btn-submit">Tạo Tài Khoản</button>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // KHỞI TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH SẴN CÓ
+        // ==========================================
+        const adminEmail = "admin@gmail.com";
+        if (!localStorage.getItem(adminEmail)) {
+            const adminUser = {
+                name: "Quản Trị Viên (Admin)",
+                email: adminEmail,
+                pass: "123456"
+            };
+            localStorage.setItem(adminEmail, JSON.stringify(adminUser));
+        }
+
+        // 1. Chuyển đổi qua lại giữa tab Đăng Nhập và Đăng Ký
+        function switchTab(type) {
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const subTitle = document.getElementById('sub-title');
+
+            if (type === 'login') {
+                formLogin.classList.add('active');
+                formRegister.classList.remove('active');
+                tabLogin.classList.add('active');
+                tabRegister.classList.remove('active');
+                subTitle.textContent = "Chào mừng bạn! Vui lòng đăng nhập tài khoản.";
+            } else {
+                formLogin.classList.remove('active');
+                formRegister.classList.add('active');
+                tabLogin.classList.remove('active');
+                tabRegister.classList.add('active');
+                subTitle.textContent = "Tạo tài khoản an toàn với 2 lớp mật khẩu.";
+            }
+        }
+
+        // 2. Xử lý lưu tài khoản khi ĐĂNG KÝ MỚI
+        document.getElementById('form-register').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const pass1 = document.getElementById('reg-pass1').value;
+            const pass2 = document.getElementById('reg-pass2').value;
+
+            if (pass1 !== pass2) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            const user = { name: name, email: email, pass: pass1 };
+            localStorage.setItem(email, JSON.stringify(user));
+
+            alert('Đăng ký thành công! Hãy đăng nhập ngay.');
+            this.reset();
+            switchTab('login');
+        });
+
+        // 3. Xử lý ĐĂNG NHẬP (Dùng được cả Admin mặc định & Tài khoản tự tạo)
+        document.getElementById('form-login').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            const storedUser = localStorage.getItem(email);
+
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                if (userData.pass === pass) {
+                    localStorage.setItem('currentUser', userData.name);
+                    alert('Đăng nhập thành công với quyền: ' + userData.name);
+                    window.location.href = 'Giaodienql.html';
+                } else {
+                    alert('Mật khẩu không chính xác!');
+                }
+            } else {
+                alert('Tài khoản không tồn tại! Thử dùng tài khoản Admin: admin@gmail.com / 123456');
+            }
+        });
+    </script>
+</body>
+</html>
